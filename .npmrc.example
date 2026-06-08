@@ -1,0 +1,11 @@
+# .npmrc — copy to .npmrc and fill in your values
+# NEVER commit .npmrc (it contains your token)
+#
+# Step 1: Find GROUP_ID in GitLab → your group → Settings → General (top of page)
+# Step 2: Create a Personal Access Token with read_package_registry (customers)
+#         or write_package_registry (maintainers) scope
+#
+# GitLab → top-right avatar → Edit profile → Access Tokens
+
+@dev:registry=https://your-gitlab.example.com/api/v4/groups/<GROUP_ID>/-/packages/npm/
+//your-gitlab.example.com/api/v4/groups/<GROUP_ID>/-/packages/npm/:_authToken=<YOUR_TOKEN>

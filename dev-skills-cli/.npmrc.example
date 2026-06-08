@@ -1,0 +1,12 @@
+# .npmrc
+# Point @dev scoped packages to your internal registry.
+# Place this file in your home directory (~/.npmrc) or project root.
+#
+# Replace the registry URL with your actual Artifactory / GitHub Packages / Verdaccio URL.
+
+@dev:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+
+# Or for Artifactory:
+# @dev:registry=https://your-org.jfrog.io/artifactory/api/npm/npm-local/
+# //your-org.jfrog.io/artifactory/api/npm/npm-local/:_authToken=${ARTIFACTORY_TOKEN}

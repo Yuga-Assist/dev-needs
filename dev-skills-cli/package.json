@@ -1,0 +1,28 @@
+{
+  "name": "@dev/skills",
+  "version": "1.2.0",
+  "description": "Dev AI Skills installer for Claude Desktop and Windsurf",
+  "main": "lib/index.js",
+  "bin": {
+    "ms-skills": "bin/cli.js"
+  },
+  "scripts": {
+    "start": "node bin/cli.js"
+  },
+  "keywords": ["Dev", "skills", "claude", "windsurf", "ai", "mcp"],
+  "author": "Dev Platform Team",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "enquirer": "^2.4.1",
+    "ora": "^7.0.1",
+    "boxen": "^7.1.1",
+    "figures": "^6.0.1",
+    "fs-extra": "^11.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "type": "module"
+}
