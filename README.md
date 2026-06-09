@@ -8,7 +8,7 @@ Pick your role. Pick your editors. Done — skills land in `~/.Dev/skills/` and 
 
 ## Features
 
-- **Role-based skills** — install only what's relevant to your job: `dev`, `support`, `platform`, or `all`
+- **Role-based skills** — install only what's relevant to your job: `dev`, `support`, or `all`
 - **9 editors supported** in one pass: Claude Desktop, Claude Code, Windsurf, Cursor, GitHub Copilot, OpenAI/ChatGPT, Cody, Aider, Continue
 - **Automatic editor detection** — pre-selects editors already installed on your machine
 - **Idempotent** — safe to run again; updates skill files and replaces old patches
@@ -24,27 +24,22 @@ Pick your role. Pick your editors. Done — skills land in `~/.Dev/skills/` and 
 |-------|----------|
 | Bug Triage & RCA | bug, triage, root cause, defect |
 | Code Review Assistant | code review, PR, diff, refactor |
-| Change History Report | CHR, change history, audit trail |
-| Form Data Process Flow | form, push table, submission, data flow |
+| Change History Report | change history, audit trail, field history |
+| Form Data Process Flow | form, submission, data flow |
 | Karpathy Guidelines | coding guidelines, simplicity, surgical changes |
+| Oracle DB Expert | oracle, SQL, PL/SQL, query, index |
+| Oracle Exception Analyzer | ORA-, exception, lock, deadlock |
+| SDU / BAPI Analyzer | SDU, BAPI, batch, bulk upload |
 
 ### Support Engineer (`--role support`)
 
 | Skill | Triggers |
 |-------|----------|
-| Infolet Debugger | infolet, metric, no data |
+| Dashboard Widget Debugger | dashboard, widget, metric, no data |
 | Workflow Debugger | workflow, assignment, email not triggered |
 | Report Debugger | report, export, filter, no data |
 | Assignment Loss Investigation | assignment lost, assignment missing |
-| ORF Analysis | ORF, org restructure, impact assessment |
-
-### Platform Developer (`--role platform`)
-
-| Skill | Triggers |
-|-------|----------|
-| Oracle DB Expert | oracle, SQL, PL/SQL, query, index |
-| Oracle Exception Analyzer | ORA-, exception, lock, deadlock |
-| SDU / BAPI Analyzer | SDU, BAPI, batch, DU upload |
+| Org Restructure Analysis | org restructure, impact assessment, role scope |
 
 ---
 
