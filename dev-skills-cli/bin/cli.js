@@ -29,8 +29,8 @@ async function pickScope() {
     name:    "scope",
     message: "Where do you want to install skills?",
     choices: [
-      { name: "local",  message: "Local  — current project (.claude/skills/)" },
-      { name: "global", message: "Global — home directory (~/.claude/skills/)" },
+      { name: "local",  message: "Local  — current project (./)" },
+      { name: "global", message: "Global — home directory (~/)" },
     ],
   });
   return prompt.run();
