@@ -114,29 +114,25 @@ async function cmdInstall(options) {
     onProgress: (skill, status) => printSkillProgress(skill, status),
   });
 
-  // Step 4: editor config patching (global only — local uses .claude/ auto-detection)
+  // Step 4: pick editors + patch configs (works for both local and global)
   let editorIds = [];
-  if (scope === "global") {
-    try {
-      editorIds = await pickEditors(options.editors);
-    } catch {
-      printError("Selection cancelled.");
-      process.exit(1);
-    }
+  try {
+    editorIds = await pickEditors(options.editors);
+  } catch {
+    printError("Selection cancelled.");
+    process.exit(1);
+  }
 
-    if (editorIds.length > 0) {
-      console.log("\n  Configuring editors:\n");
-      const patchResults = await patchAllEditors(editorIds, {
-        dryRun: options.dryRun || false,
-        role,
-      });
-      for (const pr of patchResults) {
-        printPatchResult(`${pr.label || pr.editorId}`, pr);
-      }
+  if (editorIds.length > 0) {
+    console.log("\n  Configuring editors:\n");
+    const patchResults = await patchAllEditors(editorIds, {
+      dryRun:    options.dryRun || false,
+      role,
+      skillsDir: SKILLS_DIR,
+    });
+    for (const pr of patchResults) {
+      printPatchResult(`${pr.label || pr.editorId}`, pr);
     }
-  } else {
-    printInfo("Local install — Claude Code auto-detects skills from .claude/skills/");
-    printInfo("Add skills to CLAUDE.md manually if needed for other editors.");
   }
 
   // Step 5: save editors to meta
@@ -198,8 +194,9 @@ async function cmdEditors(options) {
     process.exit(0);
   }
 
+  const { SKILLS_DIR: globalSD } = getPaths("global");
   console.log("\n  Configuring editors:\n");
-  const patchResults = await patchAllEditors(editorIds, { role: meta.role || "all" });
+  const patchResults = await patchAllEditors(editorIds, { role: meta.role || "all", skillsDir: globalSD });
   for (const pr of patchResults) {
     printPatchResult(`${pr.label || pr.editorId}`, pr);
   }
