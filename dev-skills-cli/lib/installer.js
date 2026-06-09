@@ -110,11 +110,16 @@ export async function uninstallSkills(editorIds = [], scope = "global") {
   const meta   = await readMeta();
   const skills = (meta.skills || []).map(s => getSkillById(s.id)).filter(Boolean);
 
+  // Always try both scopes — covers mismatched install/remove scope selections
+  const scopes = ["global", "local"];
+
   for (const id of editorIds) {
-    const skillsDir = getEditorSkillsDir(id, scope);
-    if (!skillsDir) continue;
-    for (const skill of skills) {
-      await fs.remove(path.join(skillsDir, skill.id)).catch(() => {});
+    for (const s of scopes) {
+      const skillsDir = getEditorSkillsDir(id, s);
+      if (!skillsDir) continue;
+      for (const skill of skills) {
+        await fs.remove(path.join(skillsDir, skill.id)).catch(() => {});
+      }
     }
   }
   await fs.remove(META_FILE);

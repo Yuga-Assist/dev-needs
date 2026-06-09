@@ -265,14 +265,11 @@ async function cmdAdd(skillId) {
 async function cmdRemove(options) {
   printBanner();
 
-  let scope;
-  try { scope = await pickScope(); } catch { process.exit(1); }
-
   if (!options.yes) {
     try {
       const prompt = new Confirm({
         name: "confirm",
-        message: `Remove all Dev skills from ${scope} install?`,
+        message: "Remove all Dev skills (local + global)?",
         initial: false,
       });
       const ok = await prompt.run();
@@ -281,9 +278,10 @@ async function cmdRemove(options) {
   }
 
   const meta = await getInstalledMeta();
+  const editorIds = meta.editors?.length ? meta.editors : Object.keys((await import("../lib/editors.js")).EDITORS);
   const spinner = ora({ text: "Removing skills…", color: "red" }).start();
-  await uninstallSkills(meta.editors || [], scope);
-  if (scope === "global") await unpatchAllEditors();
+  await uninstallSkills(editorIds, "global");  // uninstallSkills now tries both scopes internally
+  await unpatchAllEditors();
   spinner.succeed("Dev skills removed.");
   console.log("");
 }
