@@ -50,7 +50,7 @@ export async function unpatchEditor(editorId) {
   switch (editor.patchMode) {
     case "json":         return unpatchJson(editor, configPath);
     case "claude-md":    return unpatchMdFile(configPath, "<!-- ms-skills -->", "<!-- /ms-skills -->");
-    case "cursor-rules": return fs.remove(path.join(configPath, "Dev")).then(() => true).catch(() => false);
+    case "cursor-rules": return fs.remove(path.join(configPath, "dev-needs")).then(() => true).catch(() => false);
     case "cody-yaml":    return fs.remove(configPath).then(() => true).catch(() => false);
     case "aider-prompt": return unpatchMdFile(configPath, "<!-- ms-skills -->", "<!-- /ms-skills -->");
     case "continue-json":return unpatchContinueJson(configPath);
@@ -186,7 +186,7 @@ async function patchClaudeMd(configPath, dryRun, result, role) {
 // Writes one .mdc file per skill into ~/.cursor/rules/dev/
 
 async function patchCursorRules(rulesDir, dryRun, result, role) {
-  const msDir = path.join(rulesDir, "Dev");
+  const msDir = path.join(rulesDir, "dev-needs");
 
   if (await fs.pathExists(msDir)) {
     result.alreadyPresent = true;
@@ -327,13 +327,13 @@ async function unpatchMdFile(configPath, openTag, closeTag) {
 
 function buildSkillsMdBlock(skills) {
   const lines = skills.map(s =>
-    `### ${s.name}\n- **Role:** ${s.role}  **Version:** ${s.version}\n- ${s.description}\n- **Triggers:** ${s.triggers?.join(", ") || "—"}\n- **File:** \`${SKILLS_DIR}/${s.file.replace("skills/", "")}\``
+    `### ${s.name}\n- **Role:** ${s.role}  **Version:** ${s.version}\n- ${s.description}\n- **Triggers:** ${s.triggers?.join(", ") || "—"}\n- **File:** \`${SKILLS_DIR}/${path.basename(s.file)}\``
   );
   return [
     "<!-- ms-skills -->",
     "## Dev Skills",
     "",
-    "You have access to the following Dev platform skills.",
+    "You have access to the following Dev skills.",
     "Invoke them automatically when the trigger keywords appear in the user query.",
     "",
     ...lines,
@@ -357,13 +357,13 @@ ${skill.description}
 **Role:** ${skill.role}   **Version:** ${skill.version}
 ${skill.tables ? `**Tables:** ${skill.tables.join(", ")}` : ""}
 
-Skill file: ${SKILLS_DIR}/${skill.file.replace("skills/", "")}
+Skill file: ${SKILLS_DIR}/${path.basename(skill.file)}
 `;
 }
 
 function buildCodyYaml(skills) {
   const entries = skills.map(s =>
-    `  - path: ${SKILLS_DIR}/${s.file.replace("skills/", "")}\n    description: "${s.name} — ${s.description.replace(/"/g, "'")}"`
+    `  - path: ${SKILLS_DIR}/${path.basename(s.file)}\n    description: "${s.name} — ${s.description.replace(/"/g, "'")}"`
   ).join("\n");
 
   return `# Dev Skills context for Cody
