@@ -2,120 +2,137 @@
 
 > One command to install curated AI skill files for your whole engineering team — across every editor they use.
 
-Developers using Claude, Cursor, Copilot, or Windsurf each need context about your platform to give useful answers. **dev-needs** ships that context as versioned skill packs and installs them into every AI editor in a single interactive flow.
+Developers using Claude, Cursor, Copilot, or Windsurf each need context about your platform to give useful answers. **dev-needs** ships that context as versioned skill files and installs them into every AI editor in a single interactive flow.
 
+Pick your role. Pick your editors. Done — skills land in `~/.Dev/skills/` and every selected editor config is patched automatically.
+
+---
+
+## Quick Start
+
+```bash
+npx github:raj4learn/dev-needs
 ```
-npx @dev/skills
-```
 
-Pick your role. Pick your editors. Done — skills land in `~/.dev/skills/` and every selected editor config is patched automatically.
-
----
-
-## Features
-
-- **Role-based skill packs** — install only the skills relevant to your job: `dev` or `support`
-- **9 editors supported** in one pass: Claude Desktop, Claude Code, Windsurf, Cursor, GitHub Copilot, OpenAI/ChatGPT, Cody, Aider, Continue
-- **12 developer + platform skills** covering code review, git workflow, Oracle DB (128 guides), Java debugging, CI/CD, schema migrations, security, and more
-- **Automatic editor detection** — pre-selects editors already installed on your machine
-- **Idempotent installs** — run again to update; previous config patches are safely replaced
-- **Dry-run mode** — preview all changes without writing anything (`--dry-run`)
-- **Monorepo** — skill packs versioned and published independently from the CLI
-
----
-
-## Skill Packs
-
-### `@dev/skills-dev` — Developer + Platform
-
-| Skill | Category |
-|-------|----------|
-| Code Review Assistant | Developer Activity |
-| Git Workflow Guide | Developer Activity |
-| Unit Testing Patterns | Developer Activity |
-| Security Checklist (OWASP) | Developer Activity |
-| API Design Guidelines | Platform Development |
-| Oracle DB Expert (128 guides) | Platform Development |
-| Oracle Exception Analyzer | Platform Development |
-| Java Debugging Guide | Platform Development |
-| App Server Tuning | Platform Development |
-| CI/CD Pipeline Guide | Platform Development |
-| Schema Migration Patterns | Platform Development |
-| Security Patching Guide | Platform Development |
-
-### `@dev/skills-support` — Support Engineer
-
-| Skill | Category |
-|-------|----------|
-| Log Analysis & Error Patterns | Support Activity |
-| Performance Triage | Support Activity |
-
----
-
-## Editor Support
-
-| Editor | Config method |
-|--------|---------------|
-| Claude Code | Appends skills block to `~/.claude/CLAUDE.md` |
-| Claude Desktop | Adds `skillsDirectories` to JSON config |
-| Windsurf (Cascade) | Adds `cascade.skillsDirectories` to settings.json |
-| Cursor | Writes one `.mdc` rule per skill to `~/.cursor/rules/` |
-| GitHub Copilot (VS Code) | Adds `codeGeneration.instructions` to VS Code settings.json |
-| Cody (Sourcegraph) | Writes `~/.cody/context.yaml` |
-| Aider | Appends to `~/.aider.system.prompt.md` |
-| Continue | Patches `systemMessage` in `~/.continue/config.json` |
-| OpenAI / ChatGPT | Generates `~/.dev/openai-custom-instructions.md` for manual paste |
+No npm account, no token, no registry config required.
 
 ---
 
 ## Installation
 
-### Prerequisites
+### Option 1 — Run directly from GitHub (recommended)
 
-- Node.js `>=18.0.0`
-- npm `>=8.0.0`
+```bash
+npx github:raj4learn/dev-needs
+```
 
-### From GitHub (development)
+npm downloads the repo, installs dependencies, and launches the interactive installer. Nothing is permanently installed on your system — only the skill files and editor config patches.
+
+### Option 2 — Install globally from GitHub
+
+```bash
+npm install -g github:raj4learn/dev-needs
+```
+
+Then run anytime with:
+
+```bash
+dev-skills
+# or
+ms-skills
+```
+
+### Option 3 — Clone and run locally
 
 ```bash
 git clone https://github.com/raj4learn/dev-needs.git
 cd dev-needs
-
-# Install all workspace dependencies
 npm install
-
-# Verify everything works
-npm test
+node dev-skills-cli/bin/cli.js
 ```
 
-### Install a role (once CLI lib is complete)
+---
 
-```bash
-# Interactive — prompts for role and editors
-npx @dev/skills
+## Prerequisites
 
-# Or non-interactive
-npx @dev/skills install --role dev --editors claude-code,cursor
-```
+- Node.js `>=18.0.0`
+- npm `>=8.0.0`
 
-### Update installed skills
+---
 
-```bash
-npx @dev/skills update
-```
+## What it does
 
-### Remove everything
+1. **Prompts for your role** — `dev`, `support`, `platform`, or `all`
+2. **Detects installed editors** — auto-selects editors found on your machine
+3. **Copies skill files** to `~/.Dev/skills/<role>/`
+4. **Patches each editor config** so the AI has access to the skills on every run
 
-```bash
-npx @dev/skills remove
-```
+---
+
+## Features
+
+- **Role-based skills** — install only what's relevant to your job
+- **9 editors** in one pass: Claude Desktop, Claude Code, Windsurf, Cursor, GitHub Copilot, OpenAI/ChatGPT, Cody, Aider, Continue
+- **Automatic editor detection** — pre-selects editors already installed on your machine
+- **Idempotent** — safe to run again; updates skill files and replaces old patches
+- **Dry-run mode** — preview all changes without writing anything (`--dry-run`)
+
+---
+
+## Skills
+
+### Developer (`--role dev`)
+
+| Skill | Triggers |
+|-------|----------|
+| Bug Triage & RCA | bug, triage, root cause, defect |
+| Code Review Assistant | code review, PR, diff, refactor |
+| Change History Report (CHR) | CHR, change history, audit trail |
+| Form Data Process Flow | form, push table, submission, data flow |
+| Karpathy Guidelines | coding guidelines, simplicity, surgical changes |
+
+### Support Engineer (`--role support`)
+
+| Skill | Triggers |
+|-------|----------|
+| Infolet Debugger | infolet, metric, no data, not visible |
+| Workflow Debugger | workflow, assignment, email not triggered |
+| Report Debugger | report, export, filter, no data |
+| Assignment Loss Investigation | assignment lost, assignment missing |
+| ORF Analysis | ORF, org restructure, impact assessment |
+
+### Platform Developer (`--role platform`)
+
+| Skill | Triggers |
+|-------|----------|
+| Oracle DB Expert | oracle, SQL, PL/SQL, query, index |
+| Oracle Exception Analyzer | ORA-, exception, lock, deadlock |
+| SDU / BAPI Analyzer | SDU, BAPI, batch, DU upload |
+
+---
+
+## Editor Support
+
+| Editor | How it's configured |
+|--------|---------------------|
+| Claude Code | Appends skills block to `~/.claude/CLAUDE.md` |
+| Claude Desktop | Adds `skillsDirectories` to JSON config |
+| Windsurf | Adds `cascade.skillsDirectories` to settings.json |
+| Cursor | Writes one `.mdc` rule per skill to `~/.cursor/rules/dev/` |
+| GitHub Copilot (VS Code) | Adds `codeGeneration.instructions` to VS Code settings.json |
+| Cody (Sourcegraph) | Writes `~/.cody/context.yaml` |
+| Aider | Appends to `~/.aider.system.prompt.md` |
+| Continue | Patches `systemMessage` in `~/.continue/config.json` |
+| OpenAI / ChatGPT | Generates `~/.Dev/openai-custom-instructions.md` for manual paste |
 
 ---
 
 ## CLI Reference
 
-```
-ms-skills <command> [options]
+```bash
+npx github:raj4learn/dev-needs <command> [options]
+# or if installed globally:
+dev-skills <command> [options]
 ```
 
 | Command | Options | Description |
@@ -124,69 +141,47 @@ ms-skills <command> [options]
 | `update` | — | Re-install skills for current role |
 | `editors` | `--editors <list>` | Re-configure editors without reinstalling skills |
 | `list` | `--role <role>` | List available skills |
-| `add [skillId]` | — | Install a single skill |
+| `add [skillId]` | — | Install a single skill by ID |
 | `remove` | `--yes` | Remove all skills and editor patches |
 | `status` | — | Show installed role, editors, timestamps |
 | `which` | — | Show resolved config paths for this machine |
 
-**Roles:** `dev` · `support` · `all`
+**Roles:** `dev` · `support` · `platform` · `all`
 
 **Editor IDs:** `claude-desktop` · `claude-code` · `windsurf` · `cursor` · `copilot` · `openai` · `cody` · `aider` · `continue`
 
----
-
-## Repository Structure
-
-```
-dev-needs/
-├── packages/
-│   ├── skills-cli/          @dev/skills       — CLI installer
-│   │   ├── bin/cli.js       entry point
-│   │   └── lib/             editors.js, display.js (+ registry, installer, patcher, paths)
-│   │
-│   ├── skills-dev/          @dev/skills-dev   — dev + platform skill pack
-│   │   ├── index.js         manifest
-│   │   └── skills/          12 skill folders, each with SKILL.md
-│   │
-│   └── skills-support/      @dev/skills-support — support skill pack
-│       ├── index.js         manifest
-│       └── skills/          2 skill folders
-│
-├── package.json             workspace root
-└── .gitlab-ci.yml           CI publish pipeline
-```
-
-Each skill lives in its own folder:
-
-```
-skills/<skill-id>/
-└── SKILL.md        frontmatter + structured guidance
-```
-
-The Oracle DB skill is a **directory skill** — one `SKILL.md` entry point plus 128 individual topic guides organized by category (`sql-dev/`, `performance/`, `plsql/`, `ords/`, `migrations/`, ...).
-
----
-
-## Development
-
-### Run tests
+### Examples
 
 ```bash
-npm test                                          # all workspaces
-npm test --workspace packages/skills-dev          # dev pack only
-npm test --workspace packages/skills-support      # support pack only
+# Non-interactive install
+npx github:raj4learn/dev-needs install --role dev --editors claude-code,cursor
+
+# Preview without writing
+npx github:raj4learn/dev-needs install --role dev --dry-run
+
+# Add a single skill
+npx github:raj4learn/dev-needs add karpathy-guidelines
+
+# Check what's installed
+npx github:raj4learn/dev-needs status
+
+# Update to latest skill versions
+npx github:raj4learn/dev-needs update
+
+# Remove everything
+npx github:raj4learn/dev-needs remove
 ```
 
-Tests verify: manifest structure, all referenced SKILL.md files exist, required fields present.
+---
 
-### Add a skill
+## Adding a New Skill
 
-1. Create `packages/skills-dev/skills/<skill-id>/SKILL.md`
-2. Add entry to `manifest.skills[]` in `packages/skills-dev/index.js`
-3. Run `npm test --workspace packages/skills-dev`
-4. Bump `version` in `packages/skills-dev/package.json`
+1. Create `dev-skills-cli/skills/<role>/<skill-id>.md`
+2. Add entry to `SKILLS_REGISTRY` in `dev-skills-cli/lib/registry.js`
+3. Bump `version` in `package.json` and `dev-skills-cli/package.json`
+4. Push — immediately available via `npx github:raj4learn/dev-needs`
 
-### Skill file format
+Skill file format:
 
 ```markdown
 ---
@@ -197,36 +192,33 @@ license: MIT
 
 # Skill Title
 
-## 1. Section
-
-**Bold tagline.**
-
-- Concrete, actionable guidance
-- No filler
-
-The test: [one-line verifier]
+Your skill content here.
 ```
 
 ---
 
-## Publishing
+## Repository Structure
 
-Tag format: `skills-vX.Y.Z`
-
-```bash
-git tag skills-v1.1.0
-git push --tags
-# GitLab CI publishes all changed packages to the private registry
 ```
-
-Consumer setup (`~/.npmrc`):
-
-```ini
-@dev:registry=https://your-gitlab.example.com/api/v4/groups/<GROUP_ID>/-/packages/npm/
-//your-gitlab.example.com/...:_authToken=<YOUR_TOKEN>
+dev-needs/
+├── dev-skills-cli/          Working CLI implementation
+│   ├── bin/cli.js           Entry point (Commander.js)
+│   ├── lib/
+│   │   ├── registry.js      Skill + role definitions
+│   │   ├── installer.js     Copy skills to ~/.Dev/skills/
+│   │   ├── patcher.js       Patch 9 editor configs (7 patch modes)
+│   │   ├── editors.js       Editor definitions + detection
+│   │   ├── display.js       Terminal UI
+│   │   └── paths.js         SKILLS_DIR, META_FILE constants
+│   └── skills/
+│       ├── dev/             Developer skill files
+│       ├── support/         Support skill files
+│       └── platform/        Platform skill files
+│
+├── packages/skills-cli/     Monorepo package (in progress)
+├── package.json             Workspace root + GitHub install entrypoint
+└── .gitlab-ci.yml           CI publish pipeline
 ```
-
-See `.npmrc.example` for the full template.
 
 ---
 
