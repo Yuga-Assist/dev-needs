@@ -124,11 +124,11 @@ async function cmdInstall(options) {
   // Step 5: save meta
   const meta = await getInstalledMeta();
   meta.editors = editorIds;
-  const { META_FILE } = await import("../lib/paths.js");
+  const { META_FILE, SKILLS_DIR } = await import("../lib/paths.js");
   const fs = (await import("fs-extra")).default;
   await fs.writeJson(META_FILE, { ...meta, updatedAt: new Date().toISOString() }, { spaces: 2 });
 
-  printSuccess(role, results.length, editorIds.length);
+  printSuccess(role, results.length, editorIds.length, SKILLS_DIR);
 }
 
 // ── update ────────────────────────────────────────────────────────────────────
@@ -147,7 +147,8 @@ async function cmdUpdate() {
     onProgress: (skill, status) => printSkillProgress(skill, status),
   });
 
-  printSuccess(meta.role, results.length, (meta.editors || []).length);
+  const { SKILLS_DIR: SD } = await import("../lib/paths.js");
+  printSuccess(meta.role, results.length, (meta.editors || []).length, SD);
 }
 
 // ── editors ───────────────────────────────────────────────────────────────────
