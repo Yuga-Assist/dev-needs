@@ -20,6 +20,7 @@ import { patchAllEditors, unpatchAllEditors } from "../lib/patcher.js";
 import { getAllEditors, detectAllEditors } from "../lib/editors.js";
 import { SKILLS_REGISTRY, getSkillsByRole, ROLES } from "../lib/registry.js";
 import { getPaths } from "../lib/paths.js";
+import { getEditorSkillsDir } from "../lib/editors.js";
 
 // ── pick scope ────────────────────────────────────────────────────────────────
 
@@ -107,14 +108,7 @@ async function cmdInstall(options) {
     process.exit(1);
   }
 
-  // Step 3: install skill files
-  console.log(`\n  Installing ${ROLES[role].label} skills:\n`);
-  const { results } = await installSkills(role, {
-    scope,
-    onProgress: (skill, status) => printSkillProgress(skill, status),
-  });
-
-  // Step 4: pick editors + patch configs (works for both local and global)
+  // Step 3: pick editors
   let editorIds = [];
   try {
     editorIds = await pickEditors(options.editors);
@@ -123,24 +117,29 @@ async function cmdInstall(options) {
     process.exit(1);
   }
 
+  // Step 4: install skill folders into each editor's own skills directory
+  console.log(`\n  Installing ${ROLES[role].label} skills:\n`);
+  const { results, editorDirs } = await installSkills(role, {
+    scope,
+    editorIds,
+    onProgress: (skill, status) => printSkillProgress(skill, status),
+  });
+
+  // Step 5: patch editor configs to reference the installed skills dir
   if (editorIds.length > 0) {
     console.log("\n  Configuring editors:\n");
     const patchResults = await patchAllEditors(editorIds, {
-      dryRun:    options.dryRun || false,
+      dryRun: options.dryRun || false,
       role,
-      skillsDir: SKILLS_DIR,
+      scope,
     });
     for (const pr of patchResults) {
       printPatchResult(`${pr.label || pr.editorId}`, pr);
     }
   }
 
-  // Step 5: save editors to meta
-  const fs = (await import("fs-extra")).default;
-  const meta = await getInstalledMeta(scope);
-  await fs.writeJson(META_FILE, { ...meta, editors: editorIds, updatedAt: new Date().toISOString() }, { spaces: 2 });
-
-  printSuccess(role, results.length, editorIds.length, SKILLS_DIR);
+  const installSummary = editorDirs.map(e => e.dir).join(", ") || "no file-based editors";
+  printSuccess(role, results.length, editorIds.length, installSummary);
 }
 
 // ── update ────────────────────────────────────────────────────────────────────
@@ -160,14 +159,15 @@ async function cmdUpdate() {
     process.exit(1);
   }
 
-  const { SKILLS_DIR } = getPaths(scope);
   console.log(`\n  Updating ${meta.role} skills (${scope})…\n`);
-  const { results } = await installSkills(meta.role, {
+  const { results, editorDirs } = await installSkills(meta.role, {
     scope,
+    editorIds: meta.editors || [],
     onProgress: (skill, status) => printSkillProgress(skill, status),
   });
 
-  printSuccess(meta.role, results.length, (meta.editors || []).length, SKILLS_DIR);
+  const summary = editorDirs.map(e => e.dir).join(", ") || "—";
+  printSuccess(meta.role, results.length, (meta.editors || []).length, summary);
 }
 
 // ── editors ───────────────────────────────────────────────────────────────────
@@ -280,8 +280,9 @@ async function cmdRemove(options) {
     } catch { process.exit(1); }
   }
 
+  const meta = await getInstalledMeta();
   const spinner = ora({ text: "Removing skills…", color: "red" }).start();
-  await uninstallSkills(scope);
+  await uninstallSkills(meta.editors || [], scope);
   if (scope === "global") await unpatchAllEditors();
   spinner.succeed("Dev skills removed.");
   console.log("");

@@ -1,13 +1,13 @@
 // lib/editors.js
-// Registry of all supported AI editors/tools with config paths, detection,
-// and patch strategies for each platform (win32 | darwin | linux).
+// Registry of all supported AI editors with config paths, detection,
+// native skills directories, and patch strategies per platform.
 
 import os from "os";
 import path from "path";
 import { existsSync } from "fs";
 
-const HOME    = os.homedir();
-const APPDATA  = process.env.APPDATA  || HOME;
+const HOME     = os.homedir();
+const APPDATA  = process.env.APPDATA     || HOME;
 const LOCALAPP = process.env.LOCALAPPDATA || HOME;
 
 function byPlatform(paths) {
@@ -19,14 +19,15 @@ function byPlatform(paths) {
 
 // ── Editor definitions ────────────────────────────────────────────────────────
 //
-// patchMode values:
+// skillsDirs  — where skill FOLDERS are copied for this editor (null = no file copy)
+// patchMode   — how the editor config is updated after file copy
 //   "json"           — read/write a JSON config file, set nested skillsKey array
-//   "claude-md"      — append skills index to ~/.claude/CLAUDE.md
-//   "cursor-rules"   — write one .mdc file per skill into ~/.cursor/rules/dev/
-//   "cody-yaml"      — write ~/.cody/context.yaml referencing skill files
-//   "aider-prompt"   — append skill summaries to ~/.aider.system.prompt.md
-//   "continue-json"  — patch ~/.continue/config.json systemMessage field
-//   "copy"           — write a standalone markdown file (no editor config patched)
+//   "claude-md"      — append skills index to CLAUDE.md
+//   "cursor-rules"   — write one .mdc file per skill into rules dir
+//   "cody-yaml"      — write context.yaml referencing skill files
+//   "aider-prompt"   — append skill summaries to system prompt file
+//   "continue-json"  — patch config.json systemMessage field
+//   "copy"           — write a standalone markdown file
 
 export const EDITORS = {
 
@@ -42,13 +43,18 @@ export const EDITORS = {
       darwin: path.join(HOME, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
       linux:  path.join(HOME, ".config", "Claude", "claude_desktop_config.json"),
     },
+    skillsDirs: {
+      win32:  path.join(HOME, ".claude", "skills"),
+      darwin: path.join(HOME, ".claude", "skills"),
+      linux:  path.join(HOME, ".claude", "skills"),
+    },
     noteOnPatch: "Restart Claude Desktop to activate skills.",
   },
 
   "claude-code": {
     id:          "claude-code",
     label:       "Claude Code",
-    description: "Anthropic CLI agentic coder  •  skills via ~/.claude/CLAUDE.md",
+    description: "Anthropic CLI agentic coder  •  skills via ~/.claude/skills/",
     icon:        "⚡",
     skillsKey:   null,
     patchMode:   "claude-md",
@@ -57,7 +63,12 @@ export const EDITORS = {
       darwin: path.join(HOME, ".claude", "CLAUDE.md"),
       linux:  path.join(HOME, ".claude", "CLAUDE.md"),
     },
-    noteOnPatch: "~/.claude/CLAUDE.md updated. No restart needed — Claude Code reads it on every run.",
+    skillsDirs: {
+      win32:  path.join(HOME, ".claude", "skills"),
+      darwin: path.join(HOME, ".claude", "skills"),
+      linux:  path.join(HOME, ".claude", "skills"),
+    },
+    noteOnPatch: "~/.claude/CLAUDE.md updated. No restart needed.",
   },
 
   "windsurf": {
@@ -71,6 +82,11 @@ export const EDITORS = {
       win32:  path.join(APPDATA, "Windsurf", "User", "settings.json"),
       darwin: path.join(HOME, "Library", "Application Support", "Windsurf", "User", "settings.json"),
       linux:  path.join(HOME, ".config", "Windsurf", "User", "settings.json"),
+    },
+    skillsDirs: {
+      win32:  path.join(APPDATA, "Windsurf", "User", "skills"),
+      darwin: path.join(HOME, "Library", "Application Support", "Windsurf", "User", "skills"),
+      linux:  path.join(HOME, ".config", "Windsurf", "User", "skills"),
     },
     noteOnPatch: "Restart Windsurf to activate skills.",
   },
@@ -87,7 +103,8 @@ export const EDITORS = {
       darwin: path.join(HOME, ".cursor", "rules"),
       linux:  path.join(HOME, ".cursor", "rules"),
     },
-    noteOnPatch: "Skills written to ~/.cursor/rules/dev/. Restart Cursor to activate.",
+    skillsDirs: null,   // cursor uses .mdc rules, not skill folder copies
+    noteOnPatch: "Skills written as .mdc rules to ~/.cursor/rules/dev-needs/. Restart Cursor.",
   },
 
   "copilot": {
@@ -102,6 +119,7 @@ export const EDITORS = {
       darwin: path.join(HOME, "Library", "Application Support", "Code", "User", "settings.json"),
       linux:  path.join(HOME, ".config", "Code", "User", "settings.json"),
     },
+    skillsDirs: null,   // copilot embeds skill content in settings, no file copy
     noteOnPatch: "Reload VS Code window  →  Ctrl+Shift+P  →  'Reload Window'.",
   },
 
@@ -113,11 +131,12 @@ export const EDITORS = {
     skillsKey:   null,
     patchMode:   "copy",
     configPaths: {
-      win32:  path.join(HOME, ".Dev", "openai-custom-instructions.md"),
-      darwin: path.join(HOME, ".Dev", "openai-custom-instructions.md"),
-      linux:  path.join(HOME, ".Dev", "openai-custom-instructions.md"),
+      win32:  path.join(HOME, ".dev-needs", "openai-custom-instructions.md"),
+      darwin: path.join(HOME, ".dev-needs", "openai-custom-instructions.md"),
+      linux:  path.join(HOME, ".dev-needs", "openai-custom-instructions.md"),
     },
-    noteOnPatch: "Copy ~/.dev/openai-custom-instructions.md into ChatGPT → Settings → Custom Instructions.",
+    skillsDirs: null,
+    noteOnPatch: "Copy ~/.dev-needs/openai-custom-instructions.md into ChatGPT → Custom Instructions.",
   },
 
   "cody": {
@@ -131,6 +150,11 @@ export const EDITORS = {
       win32:  path.join(HOME, ".cody", "context.yaml"),
       darwin: path.join(HOME, ".cody", "context.yaml"),
       linux:  path.join(HOME, ".cody", "context.yaml"),
+    },
+    skillsDirs: {
+      win32:  path.join(HOME, ".cody", "skills"),
+      darwin: path.join(HOME, ".cody", "skills"),
+      linux:  path.join(HOME, ".cody", "skills"),
     },
     noteOnPatch: "Reload Cody extension to pick up new context files.",
   },
@@ -147,6 +171,7 @@ export const EDITORS = {
       darwin: path.join(HOME, ".aider.system.prompt.md"),
       linux:  path.join(HOME, ".aider.system.prompt.md"),
     },
+    skillsDirs: null,   // aider uses a single prompt file, no folder copy
     noteOnPatch: "Run aider with:  aider --system-prompt-file ~/.aider.system.prompt.md",
   },
 
@@ -162,6 +187,7 @@ export const EDITORS = {
       darwin: path.join(HOME, ".continue", "config.json"),
       linux:  path.join(HOME, ".continue", "config.json"),
     },
+    skillsDirs: null,   // continue embeds content in config.json
     noteOnPatch: "Reload the Continue extension to activate skills.",
   },
 
@@ -175,10 +201,23 @@ export function getEditorConfigPath(editorId) {
   return byPlatform(editor.configPaths);
 }
 
+export function getEditorSkillsDir(editorId, scope = "global", cwd = process.cwd()) {
+  const editor = EDITORS[editorId];
+  if (!editor?.skillsDirs) return null;
+  if (scope === "local") {
+    // local install: put skills in project .claude/skills (for claude-based editors)
+    // or editor-specific local folder
+    const localBase = editorId.startsWith("claude")
+      ? path.join(cwd, ".claude", "skills")
+      : path.join(cwd, `.${editorId}`, "skills");
+    return localBase;
+  }
+  return byPlatform(editor.skillsDirs);
+}
+
 export function detectEditor(editorId) {
   const configPath = getEditorConfigPath(editorId);
   if (!configPath) return false;
-  // For directory-based modes (cursor-rules) the configPath is a dir
   return existsSync(configPath) || existsSync(path.dirname(configPath));
 }
 

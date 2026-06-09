@@ -10,8 +10,9 @@ import { getSkillsByRole } from "./registry.js";
 
 // ── Main entry point ──────────────────────────────────────────────────────────
 
-export async function patchEditor(editorId, { dryRun = false, role = "all", skillsDir } = {}) {
-  const sd     = skillsDir || DEFAULT_SKILLS_DIR;
+export async function patchEditor(editorId, { dryRun = false, role = "all", skillsDir, scope = "global" } = {}) {
+  const { getEditorSkillsDir } = await import("./editors.js");
+  const sd = skillsDir || getEditorSkillsDir(editorId, scope) || DEFAULT_SKILLS_DIR;
   const editor = getEditorById(editorId);
   if (!editor) throw new Error(`Unknown editor: ${editorId}`);
 

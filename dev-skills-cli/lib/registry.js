@@ -10,7 +10,7 @@ export const SKILLS_REGISTRY = {
     description: "AI-assisted bug triaging, root cause analysis, and priority scoring.",
     triggers: ["bug", "triage", "RCA", "root cause", "defect", "issue analysis"],
     version: "1.2.0",
-    file: "skills/dev/bug-triage.md"
+    dir: "dev/bug-triage"
   },
   "karpathy-guidelines": {
     id: "karpathy-guidelines",
@@ -20,7 +20,7 @@ export const SKILLS_REGISTRY = {
     description: "Behavioral guidelines to reduce common LLM coding mistakes — simplicity, surgical changes, verifiable goals.",
     triggers: ["karpathy", "coding guidelines", "overcomplication", "simplicity", "surgical changes", "code standards"],
     version: "1.0.0",
-    file: "skills/dev/karpathy-guidelines.md"
+    dir: "dev/karpathy-guidelines"
   }
 };
 
