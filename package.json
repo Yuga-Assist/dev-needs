@@ -1,11 +1,10 @@
 {
-  "name": "dev-skills",
+  "name": "dev-needs",
   "version": "1.2.0",
   "description": "Dev AI Skills installer for Claude, Windsurf, Cursor, Copilot and more",
   "type": "module",
   "bin": {
-    "dev-skills": "dev-skills-cli/bin/cli.js",
-    "ms-skills":  "dev-skills-cli/bin/cli.js"
+    "dev-needs": "dev-skills-cli/bin/cli.js"
   },
   "workspaces": ["packages/*"],
   "scripts": {
