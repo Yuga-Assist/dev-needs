@@ -359,7 +359,7 @@ program
 program
   .command("list")
   .description("List available skills")
-  .option("-r, --role <role>", "Filter by role: dev | all")
+  .option("-r, --role <role>", "Filter by role: dev | support | all")
   .action(cmdList);
 
 program
