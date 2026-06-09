@@ -1,10 +1,10 @@
 // lib/installer.js
-// Copies skill files into ~/.claude/skills/ and writes install metadata
+// Copies skill files into .claude/skills/ and writes install metadata
 
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
-import { SKILLS_DIR, META_FILE } from "./paths.js";
+import { getPaths } from "./paths.js";
 import { getSkillsByRole, getSkillById } from "./registry.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,31 +12,32 @@ const BUNDLED_SKILLS_DIR = path.join(__dirname, "..", "skills");
 
 // ── Meta helpers ──────────────────────────────────────────────────────────────
 
-async function readMeta() {
-  if (await fs.pathExists(META_FILE)) {
-    return fs.readJson(META_FILE);
+async function readMeta(metaFile) {
+  if (await fs.pathExists(metaFile)) {
+    return fs.readJson(metaFile);
   }
-  return { installedAt: null, updatedAt: null, role: null, skills: [] };
+  return { installedAt: null, updatedAt: null, role: null, scope: null, skills: [] };
 }
 
-async function writeMeta(data) {
-  await fs.ensureDir(path.dirname(META_FILE));
-  await fs.writeJson(META_FILE, { ...data, updatedAt: new Date().toISOString() }, { spaces: 2 });
+async function writeMeta(metaFile, data) {
+  await fs.ensureDir(path.dirname(metaFile));
+  await fs.writeJson(metaFile, { ...data, updatedAt: new Date().toISOString() }, { spaces: 2 });
 }
 
 // ── Core install ──────────────────────────────────────────────────────────────
 
 export async function installSkills(role = "all", options = {}) {
-  const { onProgress } = options;
+  const { onProgress, scope = "global" } = options;
+  const { SKILLS_DIR, META_FILE } = getPaths(scope);
   const skills = getSkillsByRole(role);
 
   await fs.ensureDir(SKILLS_DIR);
 
   const results = [];
   for (const skill of skills) {
-    const filename = path.basename(skill.file);                   // e.g. bug-triage.md
+    const filename = path.basename(skill.file);
     const src  = path.join(BUNDLED_SKILLS_DIR, skill.file.replace(/^skills\//, ""));
-    const dest = path.join(SKILLS_DIR, filename);                 // ~/.claude/skills/bug-triage.md
+    const dest = path.join(SKILLS_DIR, filename);
 
     let status = (await fs.pathExists(dest)) ? "updated" : "installed";
 
@@ -50,19 +51,21 @@ export async function installSkills(role = "all", options = {}) {
     if (onProgress) onProgress(skill, status);
   }
 
-  const meta = await readMeta();
+  const meta = await readMeta(META_FILE);
   meta.installedAt = meta.installedAt || new Date().toISOString();
-  meta.role   = role;
+  meta.role  = role;
+  meta.scope = scope;
   meta.skills = skills.map(s => ({ id: s.id, version: s.version, installedAt: new Date().toISOString() }));
-  await writeMeta(meta);
+  await writeMeta(META_FILE, meta);
 
-  return results;
+  return { results, skillsDir: SKILLS_DIR };
 }
 
-export async function installSingleSkill(skillId) {
+export async function installSingleSkill(skillId, scope = "global") {
   const skill = getSkillById(skillId);
   if (!skill) throw new Error(`Unknown skill: ${skillId}`);
 
+  const { SKILLS_DIR } = getPaths(scope);
   await fs.ensureDir(SKILLS_DIR);
 
   const filename = path.basename(skill.file);
@@ -78,9 +81,11 @@ export async function installSingleSkill(skillId) {
   return { skill, dest };
 }
 
-export async function uninstallSkills() {
-  // Remove only our skill files, not the entire ~/.claude/skills/ dir
-  const skills = (await readMeta()).skills || [];
+export async function uninstallSkills(scope = "global") {
+  const { SKILLS_DIR, META_FILE } = getPaths(scope);
+  const meta = await readMeta(META_FILE);
+  const skills = meta.skills || [];
+
   for (const s of skills) {
     const skill = getSkillById(s.id);
     if (skill) {
@@ -90,12 +95,13 @@ export async function uninstallSkills() {
   await fs.remove(META_FILE);
 }
 
-export async function getInstalledMeta() {
-  return readMeta();
+export async function getInstalledMeta(scope = "global") {
+  const { META_FILE } = getPaths(scope);
+  return readMeta(META_FILE);
 }
 
-export async function isInstalled() {
-  const meta = await readMeta();
+export async function isInstalled(scope = "global") {
+  const meta = await getInstalledMeta(scope);
   return !!meta.installedAt;
 }
 
@@ -118,10 +124,6 @@ category: ${skill.category}
 
 ${skill.description}
 ${triggerSection}
-## Usage
-
-This skill is automatically invoked by the AI when the trigger keywords are detected in your query.
-
-> Managed by dev-needs CLI. Run \`npx github:raj4learn/dev-needs update\` to get the latest version.
+> Managed by dev-needs. Run \`npx github:raj4learn/dev-needs update\` to get the latest version.
 `;
 }

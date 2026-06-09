@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // bin/cli.js — Dev Skills CLI
-// Usage: npx @dev/skills [command] [options]
 
 import { program } from "commander";
 import ora from "ora";
@@ -14,21 +13,29 @@ import {
 } from "../lib/display.js";
 
 import {
-  installSkills, installSingleSkill, uninstallSkills,
-  getInstalledMeta,
+  installSkills, installSingleSkill, uninstallSkills, getInstalledMeta,
 } from "../lib/installer.js";
 
-import {
-  patchAllEditors, unpatchAllEditors,
-} from "../lib/patcher.js";
-
-import {
-  getAllEditors, detectAllEditors, getInstalledEditors,
-} from "../lib/editors.js";
-
+import { patchAllEditors, unpatchAllEditors } from "../lib/patcher.js";
+import { getAllEditors, detectAllEditors } from "../lib/editors.js";
 import { SKILLS_REGISTRY, getSkillsByRole, ROLES } from "../lib/registry.js";
+import { getPaths } from "../lib/paths.js";
 
-// ── Shared: pick role interactively ──────────────────────────────────────────
+// ── pick scope ────────────────────────────────────────────────────────────────
+
+async function pickScope() {
+  const prompt = new Select({
+    name:    "scope",
+    message: "Where do you want to install skills?",
+    choices: [
+      { name: "local",  message: "Local  — current project (.claude/skills/)" },
+      { name: "global", message: "Global — home directory (~/.claude/skills/)" },
+    ],
+  });
+  return prompt.run();
+}
+
+// ── pick role ─────────────────────────────────────────────────────────────────
 
 async function pickRole(preselected) {
   if (preselected && ROLES[preselected]) return preselected;
@@ -43,10 +50,9 @@ async function pickRole(preselected) {
   return prompt.run();
 }
 
-// ── Shared: pick editors interactively ───────────────────────────────────────
+// ── pick editors ──────────────────────────────────────────────────────────────
 
 async function pickEditors(preselected) {
-  // If --editors flag was passed as comma-separated list, use it directly
   if (preselected) {
     return preselected.split(",").map(s => s.trim()).filter(Boolean);
   }
@@ -63,15 +69,11 @@ async function pickEditors(preselected) {
       name:    e.id,
       message: `${e.icon || "  "} ${e.label}`,
       hint:    detectedMap[e.id] ? "detected" : "",
-      // pre-tick editors that were detected
       initial: detectedMap[e.id],
     })),
   });
 
   const selected = await prompt.run();
-  if (!selected || selected.length === 0) {
-    printWarning("No editors selected — skills will be installed to ~/.dev/skills/ only.");
-  }
   return selected || [];
 }
 
@@ -80,7 +82,18 @@ async function pickEditors(preselected) {
 async function cmdInstall(options) {
   printBanner();
 
-  // Step 1: role
+  // Step 1: scope
+  let scope;
+  try {
+    scope = await pickScope();
+  } catch {
+    printError("Selection cancelled.");
+    process.exit(1);
+  }
+
+  const { SKILLS_DIR, META_FILE } = getPaths(scope);
+
+  // Step 2: role
   let role;
   try {
     role = await pickRole(options.role);
@@ -94,39 +107,42 @@ async function cmdInstall(options) {
     process.exit(1);
   }
 
-  // Step 2: editors
-  let editorIds;
-  try {
-    editorIds = await pickEditors(options.editors);
-  } catch {
-    printError("Selection cancelled.");
-    process.exit(1);
-  }
-
   // Step 3: install skill files
   console.log(`\n  Installing ${ROLES[role].label} skills:\n`);
-  const results = await installSkills(role, {
+  const { results } = await installSkills(role, {
+    scope,
     onProgress: (skill, status) => printSkillProgress(skill, status),
   });
 
-  // Step 4: patch editors
-  if (editorIds.length > 0) {
-    console.log("\n  Configuring editors:\n");
-    const patchResults = await patchAllEditors(editorIds, {
-      dryRun: options.dryRun || false,
-      role,
-    });
-    for (const pr of patchResults) {
-      printPatchResult(`${pr.label || pr.editorId}`, pr);
+  // Step 4: editor config patching (global only — local uses .claude/ auto-detection)
+  let editorIds = [];
+  if (scope === "global") {
+    try {
+      editorIds = await pickEditors(options.editors);
+    } catch {
+      printError("Selection cancelled.");
+      process.exit(1);
     }
+
+    if (editorIds.length > 0) {
+      console.log("\n  Configuring editors:\n");
+      const patchResults = await patchAllEditors(editorIds, {
+        dryRun: options.dryRun || false,
+        role,
+      });
+      for (const pr of patchResults) {
+        printPatchResult(`${pr.label || pr.editorId}`, pr);
+      }
+    }
+  } else {
+    printInfo("Local install — Claude Code auto-detects skills from .claude/skills/");
+    printInfo("Add skills to CLAUDE.md manually if needed for other editors.");
   }
 
-  // Step 5: save meta
-  const meta = await getInstalledMeta();
-  meta.editors = editorIds;
-  const { META_FILE, SKILLS_DIR } = await import("../lib/paths.js");
+  // Step 5: save editors to meta
   const fs = (await import("fs-extra")).default;
-  await fs.writeJson(META_FILE, { ...meta, updatedAt: new Date().toISOString() }, { spaces: 2 });
+  const meta = await getInstalledMeta(scope);
+  await fs.writeJson(META_FILE, { ...meta, editors: editorIds, updatedAt: new Date().toISOString() }, { spaces: 2 });
 
   printSuccess(role, results.length, editorIds.length, SKILLS_DIR);
 }
@@ -136,30 +152,36 @@ async function cmdInstall(options) {
 async function cmdUpdate() {
   printBanner();
 
-  const meta = await getInstalledMeta();
+  // Try local first, fall back to global
+  let meta = await getInstalledMeta("local");
+  let scope = "local";
   if (!meta.installedAt) {
-    printError("No skills installed yet. Run: npx @dev/skills install");
+    meta  = await getInstalledMeta("global");
+    scope = "global";
+  }
+  if (!meta.installedAt) {
+    printError("No skills installed yet. Run: npx github:raj4learn/dev-needs install");
     process.exit(1);
   }
 
-  console.log(`\n  Updating ${meta.role} skills…\n`);
-  const results = await installSkills(meta.role, {
+  const { SKILLS_DIR } = getPaths(scope);
+  console.log(`\n  Updating ${meta.role} skills (${scope})…\n`);
+  const { results } = await installSkills(meta.role, {
+    scope,
     onProgress: (skill, status) => printSkillProgress(skill, status),
   });
 
-  const { SKILLS_DIR: SD } = await import("../lib/paths.js");
-  printSuccess(meta.role, results.length, (meta.editors || []).length, SD);
+  printSuccess(meta.role, results.length, (meta.editors || []).length, SKILLS_DIR);
 }
 
 // ── editors ───────────────────────────────────────────────────────────────────
-// Re-run editor selection and patch without reinstalling skills
 
 async function cmdEditors(options) {
   printBanner();
 
-  const meta = await getInstalledMeta();
+  const meta = await getInstalledMeta("global");
   if (!meta.installedAt) {
-    printError("No skills installed yet. Run: npx @dev/skills install");
+    printError("No global skills installed. Run: npx github:raj4learn/dev-needs install");
     process.exit(1);
   }
 
@@ -177,15 +199,13 @@ async function cmdEditors(options) {
   }
 
   console.log("\n  Configuring editors:\n");
-  const patchResults = await patchAllEditors(editorIds, {
-    role: meta.role || "all",
-  });
+  const patchResults = await patchAllEditors(editorIds, { role: meta.role || "all" });
   for (const pr of patchResults) {
     printPatchResult(`${pr.label || pr.editorId}`, pr);
   }
 
+  const { META_FILE } = getPaths("global");
   const fs = (await import("fs-extra")).default;
-  const { META_FILE } = await import("../lib/paths.js");
   await fs.writeJson(META_FILE, { ...meta, editors: editorIds, updatedAt: new Date().toISOString() }, { spaces: 2 });
   console.log("");
 }
@@ -194,9 +214,6 @@ async function cmdEditors(options) {
 
 async function cmdList(options) {
   printBanner();
-  const meta = await getInstalledMeta();
-  printInstalledStatus(meta);
-
   const filterRole = options.role || "all";
   const skills = getSkillsByRole(filterRole);
 
@@ -213,6 +230,9 @@ async function cmdList(options) {
 
 async function cmdAdd(skillId) {
   printBanner();
+
+  let scope;
+  try { scope = await pickScope(); } catch { process.exit(1); }
 
   if (!skillId) {
     try {
@@ -232,7 +252,7 @@ async function cmdAdd(skillId) {
 
   const spinner = ora({ text: `Installing ${skillId}…`, color: "yellow" }).start();
   try {
-    const { skill, dest } = await installSingleSkill(skillId);
+    const { skill, dest } = await installSingleSkill(skillId, scope);
     spinner.stop();
     printSkillProgress(skill, "installed");
     printInfo(`Installed to: ${dest}`);
@@ -248,11 +268,14 @@ async function cmdAdd(skillId) {
 async function cmdRemove(options) {
   printBanner();
 
+  let scope;
+  try { scope = await pickScope(); } catch { process.exit(1); }
+
   if (!options.yes) {
     try {
       const prompt = new Confirm({
         name: "confirm",
-        message: "Remove all Dev skills and all editor config patches?",
+        message: `Remove all Dev skills from ${scope} install?`,
         initial: false,
       });
       const ok = await prompt.run();
@@ -260,10 +283,10 @@ async function cmdRemove(options) {
     } catch { process.exit(1); }
   }
 
-  const spinner = ora({ text: "Removing skills and editor configs…", color: "red" }).start();
-  await uninstallSkills();
-  await unpatchAllEditors();
-  spinner.succeed("All Dev skills and editor configs removed.");
+  const spinner = ora({ text: "Removing skills…", color: "red" }).start();
+  await uninstallSkills(scope);
+  if (scope === "global") await unpatchAllEditors();
+  spinner.succeed("Dev skills removed.");
   console.log("");
 }
 
@@ -271,24 +294,36 @@ async function cmdRemove(options) {
 
 async function cmdStatus() {
   printBanner();
-  const meta       = await getInstalledMeta();
+
+  const localMeta  = await getInstalledMeta("local");
+  const globalMeta = await getInstalledMeta("global");
   const allEditors = getAllEditors();
   const detected   = detectAllEditors();
 
-  printInstalledStatus(meta);
+  if (localMeta.installedAt) {
+    printInfo(`Local install — ${getPaths("local").SKILLS_DIR}`);
+    printInstalledStatus(localMeta);
+  }
+  if (globalMeta.installedAt) {
+    printInfo(`Global install — ${getPaths("global").SKILLS_DIR}`);
+    printInstalledStatus(globalMeta);
+  }
+  if (!localMeta.installedAt && !globalMeta.installedAt) {
+    printWarning("No skills installed. Run: npx github:raj4learn/dev-needs install");
+  }
+
   printDetectedEditors(allEditors, detected);
 }
 
 // ── which ─────────────────────────────────────────────────────────────────────
 
 async function cmdWhich() {
-  const { SKILLS_DIR, META_FILE } = await import("../lib/paths.js");
   const { getEditorConfigPath } = await import("../lib/editors.js");
   const allEditors = getAllEditors();
 
   console.log("");
-  printInfo(`Skills dir : ${SKILLS_DIR}`);
-  printInfo(`Meta file  : ${META_FILE}`);
+  printInfo(`Local  skills : ${getPaths("local").SKILLS_DIR}`);
+  printInfo(`Global skills : ${getPaths("global").SKILLS_DIR}`);
   console.log("");
   for (const editor of allEditors) {
     const p = getEditorConfigPath(editor.id);
@@ -300,27 +335,27 @@ async function cmdWhich() {
 // ── Program ───────────────────────────────────────────────────────────────────
 
 program
-  .name("ms-skills")
+  .name("dev-needs")
   .description("Dev AI Skills CLI")
-  .version("1.1.0");
+  .version("1.2.0");
 
 program
   .command("install")
-  .description("Interactive install: choose role + editors")
+  .description("Install skills — choose local (project) or global (home)")
   .option("-r, --role <role>",       `Role: ${Object.keys(ROLES).join(" | ")}`)
-  .option("-e, --editors <editors>", "Comma-separated editor IDs (skips picker)")
+  .option("-e, --editors <editors>", "Comma-separated editor IDs (global scope only)")
   .option("--dry-run",               "Preview config changes without writing")
   .action(cmdInstall);
 
 program
   .command("update")
-  .description("Update installed skills to latest")
+  .description("Update installed skills to latest version")
   .action(cmdUpdate);
 
 program
   .command("editors")
-  .description("Re-run editor selector and patch configs (no skill reinstall)")
-  .option("-e, --editors <editors>", "Comma-separated editor IDs (skips picker)")
+  .description("Re-configure editor integrations (global scope)")
+  .option("-e, --editors <editors>", "Comma-separated editor IDs")
   .action(cmdEditors);
 
 program
@@ -336,7 +371,7 @@ program
 
 program
   .command("remove")
-  .description("Remove all skills and editor configs")
+  .description("Remove installed skills")
   .option("-y, --yes", "Skip confirmation")
   .action(cmdRemove);
 
@@ -347,7 +382,7 @@ program
 
 program
   .command("which")
-  .description("Show all resolved config paths for this machine")
+  .description("Show all resolved paths for this machine")
   .action(cmdWhich);
 
 // Default: interactive install
