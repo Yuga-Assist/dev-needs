@@ -65,8 +65,8 @@ export const EDITORS = {
 
   "windsurf": {
     id:          "windsurf",
-    label:       "Windsurf / Cursor / Agents",
-    description: "Windsurf, Cursor, and any editor reading from .agents/",
+    label:       "Windsurf (Cascade)",
+    description: "Codeium AI editor  •  skills in .agents/",
     icon:        "🏄",
     patchMode:   "json",
     skillsKey:   "cascade.skillsDirectories",
@@ -79,7 +79,64 @@ export const EDITORS = {
       global: path.join(HOME, ".agents"),
       local:  ".agents",
     },
-    noteOnPatch: "Restart Windsurf / Cursor to activate skills.",
+    noteOnPatch: "Restart Windsurf to activate skills.",
+  },
+
+  "cursor": {
+    id:          "cursor",
+    label:       "Cursor",
+    description: "AI-first editor  •  skills in .agents/",
+    icon:        "🖱️",
+    patchMode:   "none",
+    skillsKey:   null,
+    configPaths: {
+      win32:  path.join(HOME, ".cursor"),
+      darwin: path.join(HOME, ".cursor"),
+      linux:  path.join(HOME, ".cursor"),
+    },
+    skillsDirs: {
+      global: path.join(HOME, ".agents"),
+      local:  ".agents",
+    },
+    noteOnPatch: "Skills copied to .agents/ — configure Cursor to read from there.",
+  },
+
+  "aider": {
+    id:          "aider",
+    label:       "Aider",
+    description: "Terminal AI coder  •  skills in .agents/",
+    icon:        "🛠️",
+    patchMode:   "none",
+    skillsKey:   null,
+    configPaths: {
+      win32:  path.join(HOME, ".aider"),
+      darwin: path.join(HOME, ".aider"),
+      linux:  path.join(HOME, ".aider"),
+    },
+    skillsDirs: {
+      global: path.join(HOME, ".agents"),
+      local:  ".agents",
+    },
+    noteOnPatch: "Skills copied to .agents/ — configure Aider to read from there.",
+  },
+
+  "openai": {
+    id:          "openai",
+    label:       "OpenAI / ChatGPT",
+    description: "ChatGPT / Codex  •  skills in .agents/",
+    icon:        "🧠",
+    patchMode:   "none",
+    skillsKey:   null,
+    configPaths: {
+      win32:  path.join(HOME, ".openai"),
+      darwin: path.join(HOME, ".openai"),
+      linux:  path.join(HOME, ".openai"),
+    },
+    skillsDirs: {
+      global: path.join(HOME, ".agents"),
+      local:  ".agents",
+    },
+    noteOnPatch: "Skills copied to .agents/ — reference them in your OpenAI custom instructions.",
   },
 
 };

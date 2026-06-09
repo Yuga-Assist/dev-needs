@@ -32,6 +32,11 @@ export async function patchEditor(editorId, { dryRun = false, role = "all", skil
   switch (editor.patchMode) {
     case "json":       return patchJson(editor, configPath, dryRun, result, sd);
     case "claude-md":  return patchClaudeMd(configPath, dryRun, result, role, sd);
+    case "none":
+      // Skills already copied to skillsDir by installer — no config patching needed
+      result.patched = true;
+      result.note    = editor.noteOnPatch || `Skills copied to ${sd}`;
+      return result;
     default:
       throw new Error(`Unknown patchMode: ${editor.patchMode}`);
   }
