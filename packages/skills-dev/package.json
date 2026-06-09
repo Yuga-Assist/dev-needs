@@ -1,0 +1,18 @@
+{
+  "name": "@dev/skills-dev",
+  "version": "1.0.0",
+  "description": "Dev skills for developers and platform engineers: bug triage, code review, git, testing, API design, Oracle, Java, CI/CD, schema migrations, security",
+  "type": "module",
+  "main": "index.js",
+  "files": ["skills/", "index.js"],
+  "scripts": {
+    "test": "node --test \"tests/*.js\""
+  },
+  "keywords": ["dev", "skills", "developer"],
+  "author": "Dev Platform Team",
+  "license": "MIT",
+  "engines": { "node": ">=18.0.0" },
+  "publishConfig": {
+    "registry": "https://your-gitlab.example.com/api/v4/groups/<GROUP_ID>/-/packages/npm/"
+  }
+}

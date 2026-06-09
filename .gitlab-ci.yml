@@ -1,0 +1,18 @@
+stages:
+  - publish
+
+publish:
+  stage: publish
+  image: node:20
+  script:
+    - PKG=${CI_COMMIT_TAG%@*}
+    - echo "Publishing package $PKG from tag $CI_COMMIT_TAG"
+    - cd packages/$PKG
+    - npm ci
+    - |
+      npm config set \
+        //${CI_SERVER_HOST}/api/v4/groups/${GITLAB_GROUP_ID}/-/packages/npm/:_authToken \
+        ${CI_JOB_TOKEN}
+    - npm publish
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^skills-/
