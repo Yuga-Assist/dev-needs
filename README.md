@@ -8,7 +8,7 @@ Pick your role. Pick your editors. Done — skills land in `~/.Dev/skills/` and 
 
 ## Features
 
-- **Role-based skills** — install only what's relevant to your job: `dev`, `support`, or `all`
+- **Role-based skills** — `dev` or `all`
 - **9 editors supported** in one pass: Claude Desktop, Claude Code, Windsurf, Cursor, GitHub Copilot, OpenAI/ChatGPT, Cody, Aider, Continue
 - **Automatic editor detection** — pre-selects editors already installed on your machine
 - **Idempotent** — safe to run again; updates skill files and replaces old patches
@@ -22,24 +22,8 @@ Pick your role. Pick your editors. Done — skills land in `~/.Dev/skills/` and 
 
 | Skill | Triggers |
 |-------|----------|
-| Bug Triage & RCA | bug, triage, root cause, defect |
-| Code Review Assistant | code review, PR, diff, refactor |
-| Change History Report | change history, audit trail, field history |
-| Form Data Process Flow | form, submission, data flow |
-| Karpathy Guidelines | coding guidelines, simplicity, surgical changes |
-| Oracle DB Expert | oracle, SQL, PL/SQL, query, index |
-| Oracle Exception Analyzer | ORA-, exception, lock, deadlock |
-| SDU / BAPI Analyzer | SDU, BAPI, batch, bulk upload |
-
-### Support Engineer (`--role support`)
-
-| Skill | Triggers |
-|-------|----------|
-| Dashboard Widget Debugger | dashboard, widget, metric, no data |
-| Workflow Debugger | workflow, assignment, email not triggered |
-| Report Debugger | report, export, filter, no data |
-| Assignment Loss Investigation | assignment lost, assignment missing |
-| Org Restructure Analysis | org restructure, impact assessment, role scope |
+| Bug Triage & RCA | bug, triage, root cause, defect, issue analysis |
+| Karpathy Guidelines | coding guidelines, simplicity, surgical changes, code standards |
 
 ---
 
