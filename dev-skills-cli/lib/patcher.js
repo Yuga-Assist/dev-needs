@@ -5,13 +5,12 @@
 import fs from "fs-extra";
 import path from "path";
 import { SKILLS_DIR as DEFAULT_SKILLS_DIR } from "./paths.js";
-import { getEditorById, getEditorConfigPath, getAllEditors } from "./editors.js";
+import { getEditorById, getEditorConfigPath, getAllEditors, getEditorSkillsDir } from "./editors.js";
 import { getSkillsByRole } from "./registry.js";
 
 // ── Main entry point ──────────────────────────────────────────────────────────
 
 export async function patchEditor(editorId, { dryRun = false, role = "all", skillsDir, scope = "global" } = {}) {
-  const { getEditorSkillsDir } = await import("./editors.js");
   const sd = skillsDir || getEditorSkillsDir(editorId, scope) || DEFAULT_SKILLS_DIR;
   const editor = getEditorById(editorId);
   if (!editor) throw new Error(`Unknown editor: ${editorId}`);
