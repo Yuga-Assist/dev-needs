@@ -1,133 +1,145 @@
 // lib/installer.js
-// Copies skill files into ~/.dev/skills/ and writes install metadata
+// Copies skill folders into each selected editor's own skills directory.
 
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
-import { SKILLS_DIR, META_FILE, getSkillFilePath } from "./paths.js";
 import { getSkillsByRole, getSkillById } from "./registry.js";
+import { getEditorSkillsDir, getEditorById } from "./editors.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BUNDLED_SKILLS_DIR = path.join(__dirname, "..", "skills");
+const __dirname        = path.dirname(fileURLToPath(import.meta.url));
+const BUNDLED_SKILLS   = path.join(__dirname, "..", "skills");  // dev-skills-cli/skills/
+
+// Meta file lives in ~/.dev-needs/ (neutral, not tied to any editor)
+import os from "os";
+const HOME     = os.homedir();
+const META_DIR  = path.join(HOME, ".dev-needs");
+const META_FILE = path.join(META_DIR, ".skills-meta.json");
 
 // ── Meta helpers ──────────────────────────────────────────────────────────────
 
 async function readMeta() {
-  if (await fs.pathExists(META_FILE)) {
-    return fs.readJson(META_FILE);
-  }
-  return { installedAt: null, updatedAt: null, role: null, skills: [] };
+  if (await fs.pathExists(META_FILE)) return fs.readJson(META_FILE);
+  return { installedAt: null, updatedAt: null, role: null, scope: null, editors: [], skills: [] };
 }
 
 async function writeMeta(data) {
-  await fs.ensureDir(path.dirname(META_FILE));
+  await fs.ensureDir(META_DIR);
   await fs.writeJson(META_FILE, { ...data, updatedAt: new Date().toISOString() }, { spaces: 2 });
 }
 
 // ── Core install ──────────────────────────────────────────────────────────────
 
 export async function installSkills(role = "all", options = {}) {
-  const { onProgress } = options;
+  const { onProgress, scope = "global", editorIds = [] } = options;
   const skills = getSkillsByRole(role);
 
-  await fs.ensureDir(SKILLS_DIR);
+  // Determine which editors need skill folder copies
+  const fileEditors = editorIds
+    .map(id => ({ id, dir: getEditorSkillsDir(id, scope) }))
+    .filter(e => e.dir);  // editors with skillsDirs defined
 
   const results = [];
+
   for (const skill of skills) {
-    const src  = path.join(BUNDLED_SKILLS_DIR, skill.file.replace("skills/", ""));
-    const dest = getSkillFilePath(skill.file.replace("skills/", ""));
+    const srcDir = path.join(BUNDLED_SKILLS, skill.dir);  // e.g. skills/dev/bug-triage/
 
-    await fs.ensureDir(path.dirname(dest));
+    let copied = false;
 
-    let status = "installed";
-    if (await fs.pathExists(dest)) {
-      status = "updated";
+    for (const { id, dir } of fileEditors) {
+      const destDir = path.join(dir, skill.id);            // e.g. ~/.claude/skills/bug-triage/
+      await fs.ensureDir(path.dirname(destDir));
+
+      let status = (await fs.pathExists(destDir)) ? "updated" : "installed";
+
+      if (await fs.pathExists(srcDir)) {
+        await fs.copy(srcDir, destDir, { overwrite: true });
+      } else {
+        // Fallback: generate skill file in folder
+        await fs.ensureDir(destDir);
+        await fs.writeFile(path.join(destDir, `${skill.id}.md`), generateSkillFile(skill), "utf8");
+      }
+
+      results.push({ skill, status, dest: destDir, editor: id });
+      if (!copied && onProgress) onProgress(skill, status);
+      copied = true;
     }
 
-    if (await fs.pathExists(src)) {
-      await fs.copy(src, dest, { overwrite: true });
-    } else {
-      // Write a generated skill file from registry metadata when bundled file missing
-      await fs.writeFile(dest, generateSkillFile(skill), "utf8");
-    }
-
-    results.push({ skill, status, dest });
-    if (onProgress) onProgress(skill, status);
+    // If no file-editors selected, still report progress
+    if (!copied && onProgress) onProgress(skill, "skipped");
   }
 
-  // Write metadata
   const meta = await readMeta();
   meta.installedAt = meta.installedAt || new Date().toISOString();
-  meta.role = role;
-  meta.skills = skills.map(s => ({ id: s.id, version: s.version, installedAt: new Date().toISOString() }));
+  meta.role    = role;
+  meta.scope   = scope;
+  meta.editors = editorIds;
+  meta.skills  = skills.map(s => ({ id: s.id, version: s.version, installedAt: new Date().toISOString() }));
   await writeMeta(meta);
+
+  return { results, editorDirs: fileEditors };
+}
+
+export async function installSingleSkill(skillId, editorIds = [], scope = "global") {
+  const skill = getSkillById(skillId);
+  if (!skill) throw new Error(`Unknown skill: ${skillId}`);
+
+  const srcDir = path.join(BUNDLED_SKILLS, skill.dir);
+  const results = [];
+
+  for (const id of editorIds) {
+    const skillsDir = getEditorSkillsDir(id, scope);
+    if (!skillsDir) continue;
+
+    const destDir = path.join(skillsDir, skill.id);
+    await fs.ensureDir(path.dirname(destDir));
+
+    if (await fs.pathExists(srcDir)) {
+      await fs.copy(srcDir, destDir, { overwrite: true });
+    } else {
+      await fs.ensureDir(destDir);
+      await fs.writeFile(path.join(destDir, `${skill.id}.md`), generateSkillFile(skill), "utf8");
+    }
+    results.push({ skill, dest: destDir, editor: id });
+  }
 
   return results;
 }
 
-export async function installSingleSkill(skillId) {
-  const skill = getSkillById(skillId);
-  if (!skill) throw new Error(`Unknown skill: ${skillId}`);
+export async function uninstallSkills(editorIds = [], scope = "global") {
+  const meta   = await readMeta();
+  const skills = (meta.skills || []).map(s => getSkillById(s.id)).filter(Boolean);
 
-  await fs.ensureDir(SKILLS_DIR);
-
-  const src  = path.join(BUNDLED_SKILLS_DIR, skill.file.replace("skills/", ""));
-  const dest = getSkillFilePath(skill.file.replace("skills/", ""));
-
-  await fs.ensureDir(path.dirname(dest));
-
-  if (await fs.pathExists(src)) {
-    await fs.copy(src, dest, { overwrite: true });
-  } else {
-    await fs.writeFile(dest, generateSkillFile(skill), "utf8");
+  for (const id of editorIds) {
+    const skillsDir = getEditorSkillsDir(id, scope);
+    if (!skillsDir) continue;
+    for (const skill of skills) {
+      await fs.remove(path.join(skillsDir, skill.id)).catch(() => {});
+    }
   }
-
-  return { skill, dest };
-}
-
-export async function uninstallSkills() {
-  await fs.remove(SKILLS_DIR);
   await fs.remove(META_FILE);
 }
 
-export async function getInstalledMeta() {
-  return readMeta();
-}
+export async function getInstalledMeta() { return readMeta(); }
+export async function isInstalled()      { return !!(await readMeta()).installedAt; }
 
-export async function isInstalled() {
-  const meta = await readMeta();
-  return !!meta.installedAt;
-}
-
-// ── Skill file generator (fallback when bundled files not present) ─────────────
+// ── Fallback skill file generator ─────────────────────────────────────────────
 
 function generateSkillFile(skill) {
-  const tableSection = skill.tables && skill.tables.length
-    ? `\n## Key Tables\n${skill.tables.map(t => `- \`${t}\``).join("\n")}\n`
+  const triggers = skill.triggers?.length
+    ? `\n## Trigger Keywords\nInvoke when user mentions: ${skill.triggers.join(", ")}.\n`
     : "";
-
-  const triggerSection = skill.triggers && skill.triggers.length
-    ? `\n## Trigger Keywords\nInvoke this skill when the user mentions: ${skill.triggers.join(", ")}.\n`
-    : "";
-
   return `---
 name: ${skill.name}
 id: ${skill.id}
 version: ${skill.version}
 role: ${skill.role}
-category: ${skill.category}
 ---
 
 # ${skill.name}
 
 ${skill.description}
-${triggerSection}${tableSection}
-## Usage
-
-This skill is automatically invoked by Claude when the trigger keywords are detected in your query.
-It guides investigation, suggests relevant MCP tool calls, and structures the diagnostic approach
-for Dev platform issues in this domain.
-
-> Skill managed by Dev Skills CLI. Run \`npx @dev/skills update\` to get the latest version.
+${triggers}
+> Run \`npx github:raj4learn/dev-needs update\` to get the latest version.
 `;
 }

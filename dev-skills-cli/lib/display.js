@@ -125,7 +125,7 @@ export function printSuccess(role, skillCount, editorCount, skillsDir) {
   const msg = [
     chalk.green.bold(`\n  ${figures.tick} Done!  ${skillCount} skill${skillCount !== 1 ? "s" : ""} installed across ${editorCount} editor${editorCount !== 1 ? "s" : ""}.`),
     "",
-    chalk.gray(`  Skills saved to: ${skillsDir}`),
+    chalk.gray(`  Skills installed to: ${skillsDir}`),
     "",
     chalk.gray("  Restart the configured editors to activate skills."),
     "",

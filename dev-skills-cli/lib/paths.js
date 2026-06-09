@@ -1,15 +1,22 @@
 // lib/paths.js
-// Shared path constants for the skills directory and metadata file.
-// Per-editor config paths live in editors.js.
+// Returns paths based on install scope: "local" (cwd) or "global" (home)
 
 import os from "os";
 import path from "path";
 
 const HOME = os.homedir();
 
-export const SKILLS_DIR = path.join(HOME, ".Dev", "skills");
-export const META_FILE  = path.join(HOME, ".Dev", ".skills-meta.json");
+export function getPaths(scope = "global") {
+  const base = scope === "local"
+    ? path.join(process.cwd(), ".claude")
+    : path.join(HOME, ".claude");
 
-export function getSkillFilePath(relPath) {
-  return path.join(SKILLS_DIR, relPath);
+  return {
+    SKILLS_DIR: path.join(base, "skills"),
+    META_FILE:  path.join(base, ".skills-meta.json"),
+  };
 }
+
+// Legacy exports kept for patcher.js (global default)
+export const SKILLS_DIR = path.join(HOME, ".claude", "skills");
+export const META_FILE  = path.join(HOME, ".claude", ".skills-meta.json");
