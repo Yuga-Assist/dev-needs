@@ -76,8 +76,8 @@ export const EDITORS = {
       linux:  path.join(HOME, ".config", "Windsurf", "User", "settings.json"),
     },
     skillsDirs: {
-      global: path.join(HOME, ".agents"),
-      local:  ".agents",
+      global: path.join(HOME, ".agents", "skills"),
+      local:  ".agents/skills",
     },
     noteOnPatch: "Restart Windsurf to activate skills.",
   },
@@ -95,8 +95,8 @@ export const EDITORS = {
       linux:  path.join(HOME, ".cursor"),
     },
     skillsDirs: {
-      global: path.join(HOME, ".agents"),
-      local:  ".agents",
+      global: path.join(HOME, ".agents", "skills"),
+      local:  ".agents/skills",
     },
     noteOnPatch: "Skills copied to .agents/ — configure Cursor to read from there.",
   },
@@ -114,8 +114,8 @@ export const EDITORS = {
       linux:  path.join(HOME, ".aider"),
     },
     skillsDirs: {
-      global: path.join(HOME, ".agents"),
-      local:  ".agents",
+      global: path.join(HOME, ".agents", "skills"),
+      local:  ".agents/skills",
     },
     noteOnPatch: "Skills copied to .agents/ — configure Aider to read from there.",
   },
@@ -133,8 +133,8 @@ export const EDITORS = {
       linux:  path.join(HOME, ".openai"),
     },
     skillsDirs: {
-      global: path.join(HOME, ".agents"),
-      local:  ".agents",
+      global: path.join(HOME, ".agents", "skills"),
+      local:  ".agents/skills",
     },
     noteOnPatch: "Skills copied to .agents/ — reference them in your OpenAI custom instructions.",
   },
