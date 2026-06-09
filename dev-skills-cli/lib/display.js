@@ -121,18 +121,19 @@ export function printDetectedEditors(editors, detectedMap) {
 
 // ── Success box ────────────────────────────────────────────────────────────────
 
-export function printSuccess(role, skillCount, editorCount) {
+export function printSuccess(role, skillCount, editorCount, skillsDir) {
   const msg = [
     chalk.green.bold(`\n  ${figures.tick} Done!  ${skillCount} skill${skillCount !== 1 ? "s" : ""} installed across ${editorCount} editor${editorCount !== 1 ? "s" : ""}.`),
+    "",
+    chalk.gray(`  Skills saved to: ${skillsDir}`),
     "",
     chalk.gray("  Restart the configured editors to activate skills."),
     "",
     chalk.gray("  Useful commands:"),
-    chalk.gray("    npx @dev/skills list              — see all skills"),
-    chalk.gray("    npx @dev/skills update            — pull latest versions"),
-    chalk.gray("    npx @dev/skills add <id>          — add a single skill"),
-    chalk.gray("    npx @dev/skills editors           — re-run editor selector"),
-    chalk.gray("    npx @dev/skills remove            — uninstall everything"),
+    chalk.gray("    npx github:raj4learn/dev-needs list     — see all skills"),
+    chalk.gray("    npx github:raj4learn/dev-needs update   — pull latest versions"),
+    chalk.gray("    npx github:raj4learn/dev-needs status   — verify install"),
+    chalk.gray("    npx github:raj4learn/dev-needs remove   — uninstall everything"),
     "",
   ].join("\n");
 
