@@ -1,3 +1,17 @@
+```
+╭────────────────────────────────────────╮
+│                                        │
+│   ██████╗ ███████╗██╗   ██╗            │
+│   ██╔══██╗██╔════╝██║   ██║            │
+│   ██║  ██║█████╗  ██║   ██║            │
+│   ██║  ██║██╔══╝  ╚██╗ ██╔╝            │
+│   ██████╔╝███████╗ ╚████╔╝             │
+│   ╚═════╝ ╚══════╝  ╚═══╝  Skills CLI  │
+│   Dev AI Skills Installer              │
+│                                        │
+╰────────────────────────────────────────╯
+```
+
 # dev-needs
 
 > One command to install curated AI skill files for your engineering team — across every editor they use.
