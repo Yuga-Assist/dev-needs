@@ -19,6 +19,7 @@ license: MIT
 - First occurrence timestamp + affected environment
 - Who/what changed recently (deploy, config, data import)
 - Frequency: always / intermittent / one-time
+- Ask for Clarification questions, use grill-me skill.
 
 The test: can someone reproduce from your notes without asking you questions?
 
@@ -26,20 +27,21 @@ The test: can someone reproduce from your notes without asking you questions?
 
 ## 2. Classify Before Investigating
 
-| Type | Signal | First place to look |
-|------|--------|---------------------|
-| **Regression** | "worked before X" | git log / recent deploy diff |
-| **Data bug** | wrong output, silent failure | DB state, input validation |
-| **Race condition** | intermittent, concurrency | thread dumps, retry logs |
-| **Config/Env** | works locally, fails in prod | env vars, feature flags, secrets |
-| **Integration** | third-party call fails | outbound request logs, API status |
-| **Logic bug** | deterministic wrong result | unit test the function in isolation |
+| Type               | Signal                       | First place to look                 |
+| ------------------ | ---------------------------- | ----------------------------------- |
+| **Regression**     | "worked before X"            | git log / recent deploy diff        |
+| **Data bug**       | wrong output, silent failure | DB state, input validation          |
+| **Race condition** | intermittent, concurrency    | thread dumps, retry logs            |
+| **Config/Env**     | works locally, fails in prod | env vars, feature flags, secrets    |
+| **Integration**    | third-party call fails       | outbound request logs, API status   |
+| **Logic bug**      | deterministic wrong result   | unit test the function in isolation |
 
 ---
 
 ## 3. Evidence Gathering
 
 ### Logs
+
 ```
 1. Find the first occurrence — not the latest, the FIRST
 2. Look 30–60 seconds BEFORE the error, not just at it
@@ -48,6 +50,7 @@ The test: can someone reproduce from your notes without asking you questions?
 ```
 
 ### Code
+
 ```
 1. git log --all -S "error text" -- path/to/file   ← find when it appeared
 2. git bisect                                       ← binary search the commit
@@ -55,6 +58,7 @@ The test: can someone reproduce from your notes without asking you questions?
 ```
 
 ### State
+
 ```
 1. What was the input? (request payload, form data, queue message)
 2. What was the system state? (DB record, cache value, session)
@@ -81,6 +85,7 @@ Why 5:    Migration script lacked index creation step  ← ROOT CAUSE
 ## 5. Hypothesis → Evidence → Conclusion
 
 For each hypothesis:
+
 1. State it explicitly: *"I think X because Y"*
 2. Find evidence that would prove OR disprove it
 3. Mark confirmed / ruled out
@@ -92,11 +97,11 @@ Never fix before you can explain the root cause in one sentence.
 
 ## 6. Priority Scoring
 
-| Priority | Criteria |
-|----------|----------|
-| **P1** | Production down, data loss, security breach, affects all users |
-| **P2** | Key feature broken, workaround exists, affects many users |
-| **P3** | Edge case, cosmetic, affects few users, workaround easy |
+| Priority | Criteria                                                       |
+| -------- | -------------------------------------------------------------- |
+| **P1**   | Production down, data loss, security breach, affects all users |
+| **P2**   | Key feature broken, workaround exists, affects many users      |
+| **P3**   | Edge case, cosmetic, affects few users, workaround easy        |
 
 Escalate immediately if: data is being corrupted, credentials are exposed, or the blast radius is still unknown.
 
