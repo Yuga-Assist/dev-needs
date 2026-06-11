@@ -1,55 +1,147 @@
 ---
 name: Bug Triage & RCA
-id: bug-triage
-version: 1.2.0
-role: dev
-category: Developer Activity
+description: Systematic root cause analysis — symptom → evidence → cause → fix.
+license: MIT
 ---
 
 # Bug Triage & RCA
 
-AI-assisted bug triaging, root cause analysis, and priority scoring
-using Jira JQL queries and Oracle MCP server tools.
+**Tradeoff:** Depth vs speed. Use Fast Track for obvious regressions; Full RCA for intermittent or data-corruption bugs.
 
-## Trigger Keywords
+---
 
-Invoke this skill when the user mentions: bug, triage, RCA, root cause,
-defect analysis, issue investigation, Jira bug, error log.
+## 1. Capture the Bug (2 min)
 
-## Investigation Flow
+**Before touching code, collect:**
 
-1. **Fetch issue details** — use Jira JQL to pull the bug metadata,
-   affected component, module code, and reporter context.
+- Exact error message or unexpected behavior (copy verbatim)
+- Steps to reproduce (minimum reproducible case)
+- First occurrence timestamp + affected environment
+- Who/what changed recently (deploy, config, data import)
+- Frequency: always / intermittent / one-time
+- Ask for Clarification questions, use grill-me skill.
 
-2. **Identify module** — map the Jira component label to a Dev
-   module code (e.g. TPM, ISM, GRC, AUD) and derive the relevant
-   metric/infolet IDs.
+The test: can someone reproduce from your notes without asking you questions?
 
-3. **Query SI_DB_LOG** — search error logs around the reported timestamp
-   using `get_app_db_logs` with log_level=E and relevant module filter.
+---
 
-4. **Check workflow state** — if the bug involves a submission or
-   assignment, fetch the process_instance_id and run
-   `get_task_details_from_pid` to see current workflow position.
+## 2. Classify Before Investigating
 
-5. **Trace form data** — if data is missing or wrong, check the push
-   table (SI_`METRIC_ID`_T) and master table for the record.
+| Type               | Signal                       | First place to look                 |
+| ------------------ | ---------------------------- | ----------------------------------- |
+| **Regression**     | "worked before X"            | git log / recent deploy diff        |
+| **Data bug**       | wrong output, silent failure | DB state, input validation          |
+| **Race condition** | intermittent, concurrency    | thread dumps, retry logs            |
+| **Config/Env**     | works locally, fails in prod | env vars, feature flags, secrets    |
+| **Integration**    | third-party call fails       | outbound request logs, API status   |
+| **Logic bug**      | deterministic wrong result   | unit test the function in isolation |
 
-6. **Correlate with recent deployments** — run `get_db_modified_objects`
-   with the relevant package_name to see if recent changes could be
-   the cause.
+---
 
-7. **Score and summarize** — produce a concise RCA with:
-   - Root cause (code / config / data / environment)
-   - Affected records count
-   - Suggested fix approach
-   - Priority recommendation (P1/P2/P3)
+## 3. Evidence Gathering
 
-## Key Tables
+### Logs
 
-- `SI_DB_LOG` — primary error log
-- `MS_APPS_MAM_RUN_LOG` — MAM run failures
-- `SI_EVENT_ASSIGNMENTS` — assignment status
-- `SI_METRICS_T` — form/metric metadata
+```
+1. Find the first occurrence — not the latest, the FIRST
+2. Look 30–60 seconds BEFORE the error, not just at it
+3. Grep for the request ID / correlation ID across all services
+4. Check previous successful request of same type for contrast
+```
 
-> Managed by Dev Skills CLI. Run `npx @dev/skills update` for latest.
+### Code
+
+```
+1. git log --all -S "error text" -- path/to/file   ← find when it appeared
+2. git bisect                                       ← binary search the commit
+3. git blame the suspicious line                   ← who changed it, why
+```
+
+### State
+
+```
+1. What was the input? (request payload, form data, queue message)
+2. What was the system state? (DB record, cache value, session)
+3. What was the expected vs actual output?
+```
+
+---
+
+## 4. Five-Why Drill (core RCA technique)
+
+```
+Symptom:  "Payment failed"
+Why 1:    Timeout calling payment gateway
+Why 2:    Connection pool exhausted
+Why 3:    Slow queries holding connections too long
+Why 4:    Missing index after schema migration
+Why 5:    Migration script lacked index creation step  ← ROOT CAUSE
+```
+
+**Stop at the why where a fix prevents recurrence, not just the immediate incident.**
+
+---
+
+## 5. Hypothesis → Evidence → Conclusion
+
+For each hypothesis:
+
+1. State it explicitly: *"I think X because Y"*
+2. Find evidence that would prove OR disprove it
+3. Mark confirmed / ruled out
+4. Move to next until one hypothesis survives all evidence
+
+Never fix before you can explain the root cause in one sentence.
+
+---
+
+## 6. Priority Scoring
+
+| Priority | Criteria                                                       |
+| -------- | -------------------------------------------------------------- |
+| **P1**   | Production down, data loss, security breach, affects all users |
+| **P2**   | Key feature broken, workaround exists, affects many users      |
+| **P3**   | Edge case, cosmetic, affects few users, workaround easy        |
+
+Escalate immediately if: data is being corrupted, credentials are exposed, or the blast radius is still unknown.
+
+---
+
+## 7. RCA Output Template
+
+```
+## Root Cause
+[One sentence: what was broken and why]
+
+## Timeline
+- HH:MM  First reported
+- HH:MM  Reproduced / confirmed
+- HH:MM  Root cause identified
+- HH:MM  Fix deployed / rolled back
+
+## Evidence
+- Log line / stack trace that proves the cause
+- Commit or config that introduced it
+
+## Fix
+- Immediate: [what stopped the bleeding]
+- Permanent: [what prevents recurrence]
+
+## Priority: P1 / P2 / P3
+
+## Follow-up
+- [ ] Add test that would have caught this
+- [ ] Update runbook if it's a known failure mode
+```
+
+---
+
+## Fast Track (regression checklist)
+
+```
+□ Check last deployment — what changed?
+□ Check feature flags — anything toggled?
+□ Check config / env vars — any rotation or update?
+□ Check dependent services — any upstream incidents?
+□ Rollback or revert if cause is clear and fix is risky
+```
