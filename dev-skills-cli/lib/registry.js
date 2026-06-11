@@ -2,6 +2,7 @@
 // Central registry — derived from skills/ folder structure.
 // role "dev"     → skills/dev/<id>/
 // role "support" → skills/support/<id>/
+// role "all"     → skills/shared/<id>/  (installed for any role)
 
 export const SKILLS_REGISTRY = {
 
@@ -108,24 +109,59 @@ export const SKILLS_REGISTRY = {
     dir:         "support/incident-response",
   },
 
+  // ── Shared Skills (dev + support) ────────────────────────────────────────
+
+  "caveman": {
+    id:          "caveman",
+    name:        "Caveman Mode",
+    role:        "all",
+    category:    "Communication",
+    description: "Ultra-compressed communication mode — cuts token usage ~75% by dropping filler while keeping full technical accuracy.",
+    triggers:    ["caveman", "caveman mode", "less tokens", "be brief", "terse"],
+    version:     "1.0.0",
+    dir:         "shared/caveman",
+  },
+
+  "grill-me": {
+    id:          "grill-me",
+    name:        "Grill Me",
+    role:        "all",
+    category:    "Communication",
+    description: "Interview the user relentlessly about a plan, bug, or design until reaching shared understanding.",
+    triggers:    ["grill me", "stress-test", "challenge my plan", "devil's advocate", "interview me"],
+    version:     "1.0.0",
+    dir:         "shared/grill-me",
+  },
+
+  "teaching": {
+    id:          "teaching",
+    name:        "Teaching Mode",
+    role:        "all",
+    category:    "Learning",
+    description: "Teach a skill or concept over multiple sessions — tracks mission, lessons, learning records, and reference materials.",
+    triggers:    ["teach me", "I want to learn", "explain", "tutorial", "lesson"],
+    version:     "1.0.0",
+    dir:         "shared/teaching",
+  },
+
 };
 
 export const ROLES = {
   dev: {
     label:       "Developer",
-    description: "Code review, git workflow, testing, security, bug triage, coding guidelines",
+    description: "Code review, git workflow, testing, security, bug triage, coding guidelines + shared skills",
     color:       "cyan",
-    skills:      Object.values(SKILLS_REGISTRY).filter(s => s.role === "dev").map(s => s.id),
+    skills:      Object.values(SKILLS_REGISTRY).filter(s => s.role === "dev" || s.role === "all").map(s => s.id),
   },
   support: {
     label:       "Support Engineer",
-    description: "Log analysis, performance triage, incident response",
+    description: "Log analysis, performance triage, incident response + shared skills",
     color:       "yellow",
-    skills:      Object.values(SKILLS_REGISTRY).filter(s => s.role === "support").map(s => s.id),
+    skills:      Object.values(SKILLS_REGISTRY).filter(s => s.role === "support" || s.role === "all").map(s => s.id),
   },
   all: {
     label:       "All Skills",
-    description: "Full skill set — dev + support",
+    description: "Full skill set — dev + support + shared",
     color:       "green",
     skills:      Object.keys(SKILLS_REGISTRY),
   },
@@ -133,7 +169,7 @@ export const ROLES = {
 
 export function getSkillsByRole(role) {
   if (role === "all") return Object.values(SKILLS_REGISTRY);
-  return Object.values(SKILLS_REGISTRY).filter(s => s.role === role);
+  return Object.values(SKILLS_REGISTRY).filter(s => s.role === role || s.role === "all");
 }
 
 export function getSkillById(id) {
