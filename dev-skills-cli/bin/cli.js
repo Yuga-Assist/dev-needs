@@ -155,7 +155,7 @@ async function cmdUpdate() {
     scope = "global";
   }
   if (!meta.installedAt) {
-    printError("No skills installed yet. Run: npx github:raj4learn/dev-needs install");
+    printError("No skills installed yet. Run: npx github:Yuga-Assist/dev-needs install");
     process.exit(1);
   }
 
@@ -177,7 +177,7 @@ async function cmdEditors(options) {
 
   const meta = await getInstalledMeta("global");
   if (!meta.installedAt) {
-    printError("No global skills installed. Run: npx github:raj4learn/dev-needs install");
+    printError("No global skills installed. Run: npx github:Yuga-Assist/dev-needs install");
     process.exit(1);
   }
 
@@ -305,7 +305,7 @@ async function cmdStatus() {
     printInstalledStatus(globalMeta);
   }
   if (!localMeta.installedAt && !globalMeta.installedAt) {
-    printWarning("No skills installed. Run: npx github:raj4learn/dev-needs install");
+    printWarning("No skills installed. Run: npx github:Yuga-Assist/dev-needs install");
   }
 
   printDetectedEditors(allEditors, detected);

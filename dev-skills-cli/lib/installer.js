@@ -145,6 +145,6 @@ role: ${skill.role}
 
 ${skill.description}
 ${triggers}
-> Run \`npx github:raj4learn/dev-needs update\` to get the latest version.
+> Run \`npx github:Yuga-Assist/dev-needs update\` to get the latest version.
 `;
 }
